@@ -3,14 +3,13 @@
   "version": "1.0.0",
   "scripts": {
     "start": "node server.js",
-    "build": "npm install && npm run copy-files",
-    "copy-files": "cp -r public/* ./"
+    "build": "npm install"
   },
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.7.2"
   },
   "engines": {
-    "node": ">=18.x"
+    "node": "18.x"
   }
 }

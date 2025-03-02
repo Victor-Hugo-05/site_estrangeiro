@@ -37,7 +37,7 @@
   <button class="room-button" id="sala3">Sala 3 (0)</button>
 
   <script>
-    const socket = io("https://192.168.15.13:3000"); 
+    const socket = io("https://site-estrangeiro.onrender.com"); 
     
     socket.on('updateRooms', (data) => {
       document.getElementById('sala1').innerHTML = `Sala 1 (${data.sala1})`;
