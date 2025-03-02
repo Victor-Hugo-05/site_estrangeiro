@@ -6,14 +6,56 @@
   <title>Videochat</title>
   <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
   <style>
-    /* Mantenha todo o CSS anterior */
-    body { display: flex; flex-wrap: wrap; background: #222; color: white; margin: 0; padding: 10px; }
-    .video-container { flex: 1; min-width: 300px; margin: 10px; }
-    video { width: 100%; border: 2px solid #008CBA; border-radius: 10px; }
-    .chat-container { flex: 1; min-width: 300px; margin: 10px; height: 80vh; display: flex; flex-direction: column; }
-    #chatMessages { flex: 1; border: 1px solid #444; border-radius: 5px; padding: 10px; margin-bottom: 10px; overflow-y: auto; }
-    #chatInput { width: calc(100% - 70px); padding: 10px; border: none; border-radius: 5px; margin-right: 10px; }
-    #sendButton { width: 60px; padding: 10px; background: #008CBA; border: none; border-radius: 5px; color: white; cursor: pointer; }
+    body { 
+      display: flex; 
+      flex-wrap: wrap; 
+      background: #222; 
+      color: white; 
+      margin: 0; 
+      padding: 10px; 
+    }
+    .video-container { 
+      flex: 1; 
+      min-width: 300px; 
+      margin: 10px; 
+    }
+    video { 
+      width: 100%; 
+      border: 2px solid #008CBA; 
+      border-radius: 10px; 
+    }
+    .chat-container { 
+      flex: 1; 
+      min-width: 300px; 
+      margin: 10px; 
+      height: 80vh; 
+      display: flex; 
+      flex-direction: column; 
+    }
+    #chatMessages { 
+      flex: 1; 
+      border: 1px solid #444; 
+      border-radius: 5px; 
+      padding: 10px; 
+      margin-bottom: 10px; 
+      overflow-y: auto; 
+    }
+    #chatInput { 
+      width: calc(100% - 70px); 
+      padding: 10px; 
+      border: none; 
+      border-radius: 5px; 
+      margin-right: 10px; 
+    }
+    #sendButton { 
+      width: 60px; 
+      padding: 10px; 
+      background: #008CBA; 
+      border: none; 
+      border-radius: 5px; 
+      color: white; 
+      cursor: pointer; 
+    }
   </style>
 </head>
 <body>
@@ -31,20 +73,16 @@
   </div>
 
   <script>
-    const socket = io("https://site-estrangeiro.onrender.com");
+    const socket = io("https://seu-app.onrender.com");
     const urlParams = new URLSearchParams(window.location.search);
     const room = urlParams.get('room');
     
-    // Atualize a configuração ICE:
     const configuration = {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:global.stun.twilio.com:3478?transport=udp" },
-        { 
-          urls: "turn:numb.viagenie.ca",
-          username: "your_email@example.com",
-          credential: "your_password"
-        }
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:global.stun.twilio.com:3478" }
       ]
     };
 
@@ -56,19 +94,25 @@
 
     async function setupWebRTC() {
       try {
-        // Obter stream local
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        console.log('Dispositivos disponíveis:', devices);
+
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: true
+        });
+
         document.getElementById('localVideo').srcObject = localStream;
 
-        // Criar conexão peer-to-peer
         peerConnection = new RTCPeerConnection(configuration);
         
-        // Adicionar tracks locais
         localStream.getTracks().forEach(track => {
           peerConnection.addTrack(track, localStream);
         });
 
-        // Configurar handlers de eventos
         peerConnection.ontrack = event => {
           document.getElementById('remoteVideo').srcObject = event.streams[0];
         };
@@ -80,7 +124,7 @@
         };
 
         peerConnection.oniceconnectionstatechange = () => {
-          console.log('Estado da conexão ICE:', peerConnection.iceConnectionState);
+          console.log('Estado ICE:', peerConnection.iceConnectionState);
         };
 
         peerConnection.onnegotiationneeded = async () => {
@@ -93,16 +137,18 @@
           }
         };
 
-        // Entrar na sala
         socket.emit('joinRoom', room);
 
       } catch (error) {
-        console.error('Erro ao configurar WebRTC:', error);
-        alert('Erro ao acessar dispositivos de mídia!');
+        console.error('Erro detalhado:', error);
+        alert(`Falha crítica: ${error.message}\n\nVerifique:
+          1. Permissões da câmera/microfone
+          2. Dispositivos conectados
+          3. HTTPS ativado`);
+        window.location.reload();
       }
     }
 
-    // Handlers de eventos do Socket.io
     socket.on('offer', async offer => {
       if (!peerConnection.currentRemoteDescription) {
         await peerConnection.setRemoteDescription(offer);
@@ -120,11 +166,10 @@
       try {
         await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
       } catch (e) {
-        console.error('Erro ao adicionar ICE candidate:', e);
+        console.error('Erro ICE:', e);
       }
     });
 
-    // Sistema de Chat
     sendButton.addEventListener('click', () => {
       if (chatInput.value.trim()) {
         socket.emit('chatMessage', {
@@ -157,7 +202,6 @@
       });
     });
 
-    // Iniciar
     setupWebRTC();
   </script>
 </body>
