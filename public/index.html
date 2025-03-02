@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Página Inicial</title>
   <style>
-    /* Mantenha todo o CSS original que você tinha */
+    /* Estilos existentes mantidos */
     body {
       background: #222;
       color: white;
@@ -19,51 +19,246 @@
       height: 100vh;
       position: relative;
     }
-    /* ... (todo o CSS original permanece igual) ... */
+
+    /* Novos estilos para o modal */
+    #editModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #modalContent {
+      background: #333;
+      padding: 2rem;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 5px;
+      border: 1px solid #555;
+      background: #444;
+      color: white;
+    }
+
+    #modalButtons {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1rem;
+    }
+
+    #modalButtons button {
+      flex: 1;
+      padding: 0.5rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #saveButton {
+      background: #008CBA;
+      color: white;
+    }
+
+    #cancelButton {
+      background: #666;
+      color: white;
+    }
   </style>
 </head>
 <body>
   <div class="top-left">
-    <img src="default-avatar.png" alt="Adicionar Foto" id="profilePic">
+    <img src="default-avatar.png" alt="Foto do Perfil" id="profilePic">
     <div class="user-info">
       <div class="user-details">
         <div id="username">UsuárioGenérico</div>
+        <div id="languages">
+          <span id="nativeLanguageDisplay">Português</span> • 
+          <span id="learningLanguagesDisplay">Inglês, Espanhol</span>
+        </div>
         <div id="money">💰 1000</div>
       </div>
       <div id="editInfo">✏️</div>
     </div>
   </div>
-  
+
   <button class="center-button" onclick="window.location.href='salas.html'">
     Chamada com estrangeiro
   </button>
 
-  <!-- Adicione dentro do modal -->
+  <!-- Modal de Edição -->
   <div id="editModal">
     <div id="modalContent">
-      <h2>Redefinir Informações</h2>
-      <img src="default-avatar.png" alt="Pré-visualização" id="editProfilePreview">
+      <h2>Editar Perfil</h2>
       
-      <!-- Adicione este input para o nome -->
-      <label for="editUsername">Nome:</label>
-      <input type="text" id="editUsername" placeholder="Digite seu nome">
+      <div class="form-group">
+        <label for="editUsername">Nome:</label>
+        <input type="text" id="editUsername" placeholder="Seu nome">
+      </div>
 
-      <!-- Mantenha os outros elementos do modal -->
+      <div class="form-group">
+        <label for="editProfilePic">Foto de Perfil:</label>
+        <input type="file" id="editProfilePic" accept="image/*">
+        <img src="default-avatar.png" alt="Pré-visualização" id="editProfilePreview" 
+             style="width: 100px; height: 100px; border-radius: 50%; margin-top: 10px;">
+      </div>
+
+      <div class="form-group">
+        <label for="nativeLanguage">Língua Nativa:</label>
+        <select id="nativeLanguage">
+          <option value="">Selecione sua língua nativa</option>
+          <!-- Opções serão preenchidas via JavaScript -->
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="learningLanguages">Línguas que Quero Aprender:</label>
+        <select id="learningLanguages" multiple size="5">
+          <!-- Opções serão preenchidas via JavaScript -->
+        </select>
+        <small>Segure Ctrl/Cmd para selecionar múltiplas</small>
+      </div>
+
+      <div id="modalButtons">
+        <button id="saveButton">Salvar</button>
+        <button id="cancelButton">Cancelar</button>
+      </div>
     </div>
   </div>
 
   <script>
-    // Mantenha todo o JavaScript original do index.html
-    const storedName = localStorage.getItem('username') || 'UsuárioGenérico';
-    document.getElementById('username').textContent = storedName;
-    
-    const storedPic = localStorage.getItem('profilePic');
-    if (storedPic) {
-      document.getElementById('profilePic').src = storedPic;
-      document.getElementById('editProfilePreview').src = storedPic;
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+      // Elementos do DOM
+      const editInfo = document.getElementById('editInfo');
+      const editModal = document.getElementById('editModal');
+      const editProfilePreview = document.getElementById('editProfilePreview');
+      const editUsername = document.getElementById('editUsername');
+      const editProfilePic = document.getElementById('editProfilePic');
+      const nativeLanguageSelect = document.getElementById('nativeLanguage');
+      const learningLanguagesSelect = document.getElementById('learningLanguages');
+      const saveButton = document.getElementById('saveButton');
+      const cancelButton = document.getElementById('cancelButton');
 
-    // ... (restante do código JavaScript original)
+      // Dados iniciais
+      const languages = [
+        'Inglês', 'Espanhol', 'Francês', 'Alemão', 'Italiano',
+        'Mandarim', 'Japonês', 'Coreano', 'Árabe', 'Russo'
+      ];
+
+      // Carregar dados salvos
+      const userData = {
+        username: localStorage.getItem('username') || 'UsuárioGenérico',
+        profilePic: localStorage.getItem('profilePic') || 'default-avatar.png',
+        nativeLanguage: localStorage.getItem('nativeLanguage') || '',
+        learningLanguages: JSON.parse(localStorage.getItem('learningLanguages') || '[]')
+      };
+
+      // Popular selects de línguas
+      function populateLanguageOptions() {
+        languages.forEach(lang => {
+          const option1 = document.createElement('option');
+          option1.value = lang;
+          option1.textContent = lang;
+          nativeLanguageSelect.appendChild(option1);
+
+          const option2 = document.createElement('option');
+          option2.value = lang;
+          option2.textContent = lang;
+          learningLanguagesSelect.appendChild(option2);
+        });
+      }
+
+      // Atualizar exibição do perfil
+      function updateProfileDisplay() {
+        document.getElementById('username').textContent = userData.username;
+        document.getElementById('profilePic').src = userData.profilePic;
+        document.getElementById('nativeLanguageDisplay').textContent = 
+          userData.nativeLanguage || 'Não definida';
+        document.getElementById('learningLanguagesDisplay').textContent = 
+          userData.learningLanguages.join(', ') || 'Nenhuma selecionada';
+      }
+
+      // Abrir modal
+      editInfo.addEventListener('click', () => {
+        editUsername.value = userData.username;
+        editProfilePreview.src = userData.profilePic;
+        nativeLanguageSelect.value = userData.nativeLanguage;
+        
+        // Selecionar línguas de aprendizado
+        Array.from(learningLanguagesSelect.options).forEach(option => {
+          option.selected = userData.learningLanguages.includes(option.value);
+        });
+
+        editModal.style.display = 'flex';
+      });
+
+      // Preview da imagem
+      editProfilePic.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            editProfilePreview.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Salvar dados
+      saveButton.addEventListener('click', () => {
+        // Validar campos
+        if (!editUsername.value.trim()) {
+          alert('Por favor, insira um nome válido');
+          return;
+        }
+
+        // Atualizar dados
+        userData.username = editUsername.value.trim();
+        userData.profilePic = editProfilePreview.src;
+        userData.nativeLanguage = nativeLanguageSelect.value;
+        userData.learningLanguages = Array.from(learningLanguagesSelect.selectedOptions)
+          .map(option => option.value);
+
+        // Salvar no localStorage
+        localStorage.setItem('username', userData.username);
+        localStorage.setItem('profilePic', userData.profilePic);
+        localStorage.setItem('nativeLanguage', userData.nativeLanguage);
+        localStorage.setItem('learningLanguages', JSON.stringify(userData.learningLanguages));
+
+        updateProfileDisplay();
+        editModal.style.display = 'none';
+      });
+
+      // Cancelar edição
+      cancelButton.addEventListener('click', () => {
+        editModal.style.display = 'none';
+        editProfilePic.value = '';
+      });
+
+      // Inicialização
+      populateLanguageOptions();
+      updateProfileDisplay();
+    });
   </script>
 </body>
 </html>
