@@ -121,7 +121,6 @@ io.on("connection", (socket) => {
     console.log(`← ${socket.id.slice(0,8)} desconectado`);
     logRooms();
   });
-});
 
 // Iniciar servidor
 server.listen(PORT, HOST, () => {
