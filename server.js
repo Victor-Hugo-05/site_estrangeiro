@@ -68,7 +68,8 @@ io.on("connection", (socket) => {
     io.emit("updateRooms", {
       sala1: rooms.sala1.users.size,
       sala2: rooms.sala2.users.size,
-      sala3: rooms.sala3.users.size
+      sala3: rooms.sala3.users.size,
+      allEmpty: [...Object.values(rooms)].every(room => room.users.size === 0)
     });
     
     socket.emit("chatHistory", rooms[room].messages);
