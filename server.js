@@ -1,32 +1,32 @@
 const express = require("express");
-const https = require("https");
+const http = require("http");
 const { Server } = require("socket.io");
-const fs = require("fs");
 const path = require("path");
-const os = require("os");
 
-// Configuração do Express
 const app = express();
-const server = https.createServer({
-  key: fs.readFileSync("key.pem"),
-  cert: fs.readFileSync("cert.pem")
-}, app);
-
-// Configuração do Socket.io
+const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
-  }
+  },
+  // Configuração essencial para serviços em nuvem
+  transports: ["websocket", "polling"],
+  allowEIO3: true
 });
 
-// Configuração de arquivos estáticos
+// Configuração essencial para o Render
+const PORT = process.env.PORT || 3000;
+const HOST = "0.0.0.0"; // Obrigatório para serviços em nuvem
+
+// Configurar arquivos estáticos
 app.use(express.static(path.join(__dirname, "public")));
 
 // Rota principal
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
 
 // Sistema de salas
 const rooms = {
@@ -120,20 +120,6 @@ io.on("connection", (socket) => {
 });
 
 // Iniciar servidor
-server.listen(3000, () => {
-  const ip = Object.values(os.networkInterfaces())
-    .flat()
-    .find(i => i.family === 'IPv4' && !i.internal).address;
-
-  console.log(`
-  ███████╗███████╗██████╗ ██╗   ██╗███████╗██████╗ 
-  ██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██╔══██╗
-  ███████╗█████╗  ██████╔╝██║   ██║█████╗  ██████╔╝
-  ╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██╔══╝  ██╔══██╗
-  ███████║███████╗██║  ██║ ╚████╔╝ ███████╗██║  ██║
-  ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝
-  
-  HTTPS Local: https://localhost:3000
-  HTTPS Rede:  https://${ip}:3000
-  `);
+server.listen(PORT, HOST, () => {
+  console.log(`Servidor rodando em http://${HOST}:${PORT}`);
 });
