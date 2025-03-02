@@ -38,9 +38,18 @@
     Chamada com estrangeiro
   </button>
 
-  <!-- Mantenha o modal original -->
+  <!-- Adicione dentro do modal -->
   <div id="editModal">
-    <!-- ... (conteúdo original do modal) ... -->
+    <div id="modalContent">
+      <h2>Redefinir Informações</h2>
+      <img src="default-avatar.png" alt="Pré-visualização" id="editProfilePreview">
+      
+      <!-- Adicione este input para o nome -->
+      <label for="editUsername">Nome:</label>
+      <input type="text" id="editUsername" placeholder="Digite seu nome">
+
+      <!-- Mantenha os outros elementos do modal -->
+    </div>
   </div>
 
   <script>

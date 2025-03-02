@@ -20,6 +20,12 @@ const io = new Server(server, {
   cookie: false
 });
 
+const cors = require('cors');
+app.use(cors({
+  origin: "https://site-estrangeiro.onrender.com",
+  methods: ["GET", "POST"]
+}));
+
 const PORT = process.env.PORT || 3000;
 const HOST = "0.0.0.0";
 
