@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Videochat</title>
+  <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+  <style>
+    /* Mantenha todo o CSS anterior */
+    body { display: flex; flex-wrap: wrap; background: #222; color: white; margin: 0; padding: 10px; }
+    .video-container { flex: 1; min-width: 300px; margin: 10px; }
+    video { width: 100%; border: 2px solid #008CBA; border-radius: 10px; }
+    .chat-container { flex: 1; min-width: 300px; margin: 10px; height: 80vh; display: flex; flex-direction: column; }
+    #chatMessages { flex: 1; border: 1px solid #444; border-radius: 5px; padding: 10px; margin-bottom: 10px; overflow-y: auto; }
+    #chatInput { width: calc(100% - 70px); padding: 10px; border: none; border-radius: 5px; margin-right: 10px; }
+    #sendButton { width: 60px; padding: 10px; background: #008CBA; border: none; border-radius: 5px; color: white; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="video-container">
+    <video id="localVideo" autoplay playsinline muted></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+  </div>
+
+  <div class="chat-container">
+    <div id="chatMessages"></div>
+    <div>
+      <input type="text" id="chatInput" placeholder="Digite sua mensagem">
+      <button id="sendButton">Enviar</button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io("https://192.168.15.13:3000");
+    const urlParams = new URLSearchParams(window.location.search);
+    const room = urlParams.get('room');
+    
+    // Configuração WebRTC
+    const configuration = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" }
+      ]
+    };
+
+    let peerConnection;
+    let localStream;
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const sendButton = document.getElementById('sendButton');
+
+    async function setupWebRTC() {
+      try {
+        // Obter stream local
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('localVideo').srcObject = localStream;
+
+        // Criar conexão peer-to-peer
+        peerConnection = new RTCPeerConnection(configuration);
+        
+        // Adicionar tracks locais
+        localStream.getTracks().forEach(track => {
+          peerConnection.addTrack(track, localStream);
+        });
+
+        // Configurar handlers de eventos
+        peerConnection.ontrack = event => {
+          document.getElementById('remoteVideo').srcObject = event.streams[0];
+        };
+
+        peerConnection.onicecandidate = event => {
+          if (event.candidate) {
+            socket.emit('candidate', { candidate: event.candidate, room });
+          }
+        };
+
+        peerConnection.oniceconnectionstatechange = () => {
+          console.log('Estado da conexão ICE:', peerConnection.iceConnectionState);
+        };
+
+        peerConnection.onnegotiationneeded = async () => {
+          try {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('offer', { offer, room });
+          } catch (e) {
+            console.error('Erro na negociação:', e);
+          }
+        };
+
+        // Entrar na sala
+        socket.emit('joinRoom', room);
+
+      } catch (error) {
+        console.error('Erro ao configurar WebRTC:', error);
+        alert('Erro ao acessar dispositivos de mídia!');
+      }
+    }
+
+    // Handlers de eventos do Socket.io
+    socket.on('offer', async offer => {
+      if (!peerConnection.currentRemoteDescription) {
+        await peerConnection.setRemoteDescription(offer);
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        socket.emit('answer', { answer, room });
+      }
+    });
+
+    socket.on('answer', async answer => {
+      await peerConnection.setRemoteDescription(answer);
+    });
+
+    socket.on('candidate', async candidate => {
+      try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.error('Erro ao adicionar ICE candidate:', e);
+      }
+    });
+
+    // Sistema de Chat
+    sendButton.addEventListener('click', () => {
+      if (chatInput.value.trim()) {
+        socket.emit('chatMessage', {
+          text: chatInput.value,
+          room
+        });
+        chatInput.value = '';
+      }
+    });
+
+    socket.on('chatMessage', message => {
+      const msgElement = document.createElement('div');
+      msgElement.innerHTML = `
+        <strong>${message.timestamp}</strong> 
+        [${message.sender.slice(0,5)}]: ${message.text}
+      `;
+      chatMessages.appendChild(msgElement);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    socket.on('chatHistory', messages => {
+      chatMessages.innerHTML = '';
+      messages.forEach(message => {
+        const msgElement = document.createElement('div');
+        msgElement.innerHTML = `
+          <strong>${message.timestamp}</strong> 
+          [${message.sender.slice(0,5)}]: ${message.text}
+        `;
+        chatMessages.appendChild(msgElement);
+      });
+    });
+
+    // Iniciar
+    setupWebRTC();
+  </script>
+</body>
+</html>

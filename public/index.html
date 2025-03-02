@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Página Inicial</title>
+  <style>
+    /* Mantenha todo o CSS original que você tinha */
+    body {
+      background: #222;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      position: relative;
+    }
+    /* ... (todo o CSS original permanece igual) ... */
+  </style>
+</head>
+<body>
+  <div class="top-left">
+    <img src="default-avatar.png" alt="Adicionar Foto" id="profilePic">
+    <div class="user-info">
+      <div class="user-details">
+        <div id="username">UsuárioGenérico</div>
+        <div id="money">💰 1000</div>
+      </div>
+      <div id="editInfo">✏️</div>
+    </div>
+  </div>
+  
+  <button class="center-button" onclick="window.location.href='salas.html'">
+    Chamada com estrangeiro
+  </button>
+
+  <!-- Mantenha o modal original -->
+  <div id="editModal">
+    <!-- ... (conteúdo original do modal) ... -->
+  </div>
+
+  <script>
+    // Mantenha todo o JavaScript original do index.html
+    const storedName = localStorage.getItem('username') || 'UsuárioGenérico';
+    document.getElementById('username').textContent = storedName;
+    
+    const storedPic = localStorage.getItem('profilePic');
+    if (storedPic) {
+      document.getElementById('profilePic').src = storedPic;
+      document.getElementById('editProfilePreview').src = storedPic;
+    }
+
+    // ... (restante do código JavaScript original)
+  </script>
+</body>
+</html>
