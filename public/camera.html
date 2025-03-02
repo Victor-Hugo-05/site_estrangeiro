@@ -74,9 +74,11 @@
 
   <script>
     // Substitua a linha de conexão por:
-    const socket = io("https://seu-app.onrender.com", {
-      withCredentials: true,
-      transports: ["websocket"] // Force WebSocket
+    const socket = io("https://site-estrangeiro.onrender.com", {
+      secure: true,
+      rejectUnauthorized: false,
+      transports: ["websocket"],
+      upgrade: false
     });
     const urlParams = new URLSearchParams(window.location.search);
     const room = urlParams.get('room');

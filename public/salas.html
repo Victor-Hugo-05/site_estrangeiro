@@ -37,9 +37,11 @@
   <button class="room-button" id="sala3">Sala 3 (0)</button>
 
   <script>
-    const socket = io("https://seu-app.onrender.com", {
-      withCredentials: true,
-      transports: ["websocket"] // Force WebSocket
+    const socket = io("https://site-estrangeiro.onrender.com", {
+      secure: true,
+      rejectUnauthorized: false,
+      transports: ["websocket"],
+      upgrade: false
     });
     
     socket.on('updateRooms', (data) => {

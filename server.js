@@ -2,25 +2,22 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
-const cors = require("cors"); // Adicione este pacote
 
 const app = express();
 const server = http.createServer(app);
 
-// Configuração de CORS para Express
-app.use(cors({
-  origin: "https://site-estrangeiro.onrender.com",
-  methods: ["GET", "POST"]
-}));
-
-// Configuração do Socket.io
+// Configuração crucial para WebSockets no Render
 const io = new Server(server, {
   cors: {
     origin: "https://site-estrangeiro.onrender.com",
     methods: ["GET", "POST"],
     credentials: true
   },
-  transports: ["websocket", "polling"]
+  transports: ["websocket"],
+  allowUpgrades: false,
+  pingInterval: 25000,
+  pingTimeout: 20000,
+  cookie: false
 });
 
 const PORT = process.env.PORT || 3000;
