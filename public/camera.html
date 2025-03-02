@@ -73,7 +73,11 @@
   </div>
 
   <script>
-    const socket = io("https://seu-app.onrender.com");
+    // Substitua a linha de conexão por:
+    const socket = io("https://seu-app.onrender.com", {
+      withCredentials: true,
+      transports: ["websocket"] // Force WebSocket
+    });
     const urlParams = new URLSearchParams(window.location.search);
     const room = urlParams.get('room');
     

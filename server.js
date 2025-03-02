@@ -2,16 +2,25 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
+const cors = require("cors"); // Adicione este pacote
 
 const app = express();
 const server = http.createServer(app);
+
+// Configuração de CORS para Express
+app.use(cors({
+  origin: "https://site-estrangeiro.onrender.com",
+  methods: ["GET", "POST"]
+}));
+
+// Configuração do Socket.io
 const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: "https://site-estrangeiro.onrender.com",
+    methods: ["GET", "POST"],
+    credentials: true
   },
-  transports: ["websocket", "polling"],
-  allowEIO3: true
+  transports: ["websocket", "polling"]
 });
 
 const PORT = process.env.PORT || 3000;
@@ -102,6 +111,13 @@ io.on("connection", (socket) => {
     console.log(`← ${socket.id.slice(0,8)} desconectado`);
     logRooms();
   });
+});
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://site-estrangeiro.onrender.com");
+  res.header("Access-Control-Allow-Methods", "GET, POST");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
 });
 
 server.listen(PORT, HOST, () => {

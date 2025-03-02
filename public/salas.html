@@ -37,7 +37,10 @@
   <button class="room-button" id="sala3">Sala 3 (0)</button>
 
   <script>
-    const socket = io("https://seu-app.onrender.com");
+    const socket = io("https://seu-app.onrender.com", {
+      withCredentials: true,
+      transports: ["websocket"] // Force WebSocket
+    });
     
     socket.on('updateRooms', (data) => {
       document.getElementById('sala1').innerHTML = `Sala 1 (${data.sala1})`;
