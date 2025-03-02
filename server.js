@@ -48,15 +48,19 @@ function logRooms() {
 io.on("connection", (socket) => {
   console.log(`\n→ Nova conexão: ${socket.id}`);
 
-  // Entrar na sala
-  socket.on("joinRoom", (room) => {
-    // Limpar salas anteriores
-    Array.from(socket.rooms).forEach(r => {
-      if (r !== socket.id && rooms[r]) {
-        rooms[r].users.delete(socket.id);
-        socket.leave(r);
-      }
+    // Adicione no evento 'connection':
+    socket.on("joinRoom", (room) => {
+      console.log(`Tentativa de entrar na sala ${room}`);
+      console.log("Salas disponíveis:", rooms);
     });
+
+    // Adicione handlers de erro:
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log('ICE Connection State:', peerConnection.iceConnectionState);
+    };
+    peerConnection.onicegatheringstatechange = () => {
+      console.log('ICE Gathering State:', peerConnection.iceGatheringState);
+    };
 
     // Entrar na nova sala
     socket.join(room);
