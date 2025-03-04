@@ -2,6 +2,7 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
+const crypto = require('crypto');
 
 const app = express();
 const server = http.createServer(app);
@@ -38,11 +39,11 @@ app.get("/", (req, res) => {
 const rooms = new Map();
 
 // Adicionar no io.on("connection"):
-socket.on("createRoom", (roomName) => {
+socket.on("createRoom", (roomName) => { // ✅
   const roomId = crypto.randomUUID();
   rooms.set(roomId, {
     name: roomName,
-    users: new Set(),
+    users: new Set([socket.id]), // Criador é primeiro usuário
     messages: [],
     createdAt: Date.now()
   });
@@ -101,7 +102,7 @@ function logRooms() {
 }
 
 io.on("connection", (socket) => {
-  console.log(`\n→ Nova conexão: ${socket.id}`);
+  console.log(`→ Nova conexão: ${socket.id}`);
 
   socket.on("joinRoom", (room) => {
     console.log(`Tentativa de entrar na sala ${room}`);
