@@ -145,6 +145,20 @@
 
         socket.emit('joinRoom', room);
 
+        // Verificar se a sala existe antes de entrar
+        const roomExists = await new Promise((resolve) => {
+          socket.emit('checkRoom', room, (exists) => {
+            resolve(exists);
+          });
+        });
+
+        if (!roomExists) {
+          alert('Sala não encontrada!');
+          window.location.href = 'salas.html';
+          return;
+        }
+
+        socket.emit('joinRoom', room);
       } catch (error) {
         console.error('Erro detalhado:', error);
         alert(`Falha crítica: ${error.message}\n\nVerifique:

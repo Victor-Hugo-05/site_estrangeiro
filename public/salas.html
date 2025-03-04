@@ -51,6 +51,16 @@
     align-items: center;
   }
 
+    .room-item h3 {
+    margin: 0;
+    max-width: 150px;
+    word-break: break-word;
+  }
+
+  .room-item p {
+    margin: 5px 0;
+  }
+
   .join-btn {
     background: #28a745;
     color: white;
@@ -106,6 +116,10 @@
           window.location.href = `camera.html?room=${roomId}`;
         });
       });
+    });
+
+    socket.on('roomCreated', (roomId) => {
+      window.location.href = `camera.html?room=${roomId}`;
     });
   </script>
 </body>

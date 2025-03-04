@@ -52,7 +52,7 @@ function getAvailableRooms() {
 function logRooms() {
   console.log("\n═ Salas Atuais ════════════════════════");
   rooms.forEach((room, id) => {
-    console.log(` ${id.slice(0,6)} (${room.name}) → ${room.users.size} usuário(s)`);
+    console.log(` ${id} (${room.name}) → ${room.users.size} usuário(s)`);
   });
   console.log("═══════════════════════════════════════\n");
 }
@@ -69,7 +69,10 @@ io.on("connection", (socket) => {
       messages: [],
       createdAt: Date.now()
     });
+    
+    socket.join(roomId); // Adiciona o criador à sala
     io.emit('updateRooms', getAvailableRooms());
+    socket.emit('roomCreated', roomId); // Novo evento para redirecionamento
     logRooms();
   });
 
@@ -124,6 +127,11 @@ io.on("connection", (socket) => {
     
     room.messages.push(message);
     io.to(data.room).emit("chatMessage", message);
+  });
+
+  // Adicionar dentro de io.on("connection")
+  socket.on('checkRoom', (roomId, callback) => {
+    callback(rooms.has(roomId));
   });
 
   // Disconnect Handler
