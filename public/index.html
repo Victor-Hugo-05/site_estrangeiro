@@ -84,6 +84,18 @@
       background: #666;
       color: white;
     }
+    
+    #learningLanguages {
+      min-height: 150px; /* Aumentar altura */
+      overflow-y: auto;
+    }
+
+    .form-group small {
+      display: block;
+      margin-top: 5px;
+      font-size: 0.8em;
+      color: #888;
+    }
   </style>
 </head>
 <body>
@@ -161,8 +173,18 @@
 
       // Dados iniciais
       const languages = [
-        'Inglês', 'Espanhol', 'Francês', 'Alemão', 'Italiano',
-        'Mandarim', 'Japonês', 'Coreano', 'Árabe', 'Russo'
+        'Inglês', 'Mandarim', 'Hindi', 'Espanhol', 'Francês', 
+        'Árabe', 'Bengali', 'Russo', 'Português', 'Urdu',
+        'Indonésio', 'Alemão', 'Japonês', 'Marata', 'Telugo',
+        'Turco', 'Tâmil', 'Vietnamita', 'Coreano', 'Italiano',
+        'Cantonês', 'Tailandês', 'Guzerate', 'Javanês', 'Farsi',
+        'Polonês', 'Panjabi', 'Malaio', 'Canarim', 'Ucraniano',
+        'Bhojpuri', 'Tagalo', 'Oriá', 'Maithili', 'Sunda',
+        'Birmanês', 'Hauçá', 'Romeno', 'Holandês', 'Sindi',
+        'Azerbaijano', 'Curdo', 'Suaíli', 'Checo', 'Grego',
+        'Húngaro', 'Sueco', 'Búlgaro', 'Hebraico', 'Dinamarquês',
+        'Norueguês', 'Finlandês', 'Eslovaco', 'Croata', 'Catalão',
+        'Georgiano', 'Armênio', 'Lituano', 'Estoniano', 'Islandês'
       ];
 
       // Carregar dados salvos
