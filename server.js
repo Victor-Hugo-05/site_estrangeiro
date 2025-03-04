@@ -2,7 +2,7 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
-const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid'); // Modificado para usar uuid
 
 const app = express();
 const server = http.createServer(app);
@@ -38,51 +38,7 @@ app.get("/", (req, res) => {
 
 const rooms = new Map();
 
-// Adicionar no io.on("connection"):
-socket.on("createRoom", (roomName) => { // ✅
-  const roomId = crypto.randomUUID();
-  rooms.set(roomId, {
-    name: roomName,
-    users: new Set([socket.id]), // Criador é primeiro usuário
-    messages: [],
-    createdAt: Date.now()
-  });
-  io.emit('updateRooms', getAvailableRooms());
-});
-
-socket.on("joinRoom", (roomId) => {
-  const room = rooms.get(roomId);
-  if (!room || room.users.size >= 2) return;
-
-  // Sair de outras salas
-  Array.from(socket.rooms).forEach(r => {
-    if (r !== socket.id && rooms.has(r)) {
-      leaveRoom(r);
-    }
-  });
-
-  socket.join(roomId);
-  room.users.add(socket.id);
-  io.emit('updateRooms', getAvailableRooms());
-});
-
-socket.on("disconnect", () => {
-  Array.from(socket.rooms).forEach(roomId => {
-    if (rooms.has(roomId)) {
-      leaveRoom(roomId);
-    }
-  });
-});
-
-function leaveRoom(roomId) {
-  const room = rooms.get(roomId);
-  room.users.delete(socket.id);
-  if (room.users.size === 0) {
-    rooms.delete(roomId);
-  }
-  io.emit('updateRooms', getAvailableRooms());
-}
-
+// Função auxiliar
 function getAvailableRooms() {
   return Array.from(rooms.entries())
     .filter(([_, room]) => room.users.size < 2)
@@ -95,8 +51,8 @@ function getAvailableRooms() {
 
 function logRooms() {
   console.log("\n═ Salas Atuais ════════════════════════");
-  Object.entries(rooms).forEach(([name, room]) => {
-    console.log(` ${name.padEnd(6)} → ${room.users.size} usuário(s)`);
+  rooms.forEach((room, id) => {
+    console.log(` ${id.slice(0,6)} (${room.name}) → ${room.users.size} usuário(s)`);
   });
   console.log("═══════════════════════════════════════\n");
 }
@@ -104,31 +60,42 @@ function logRooms() {
 io.on("connection", (socket) => {
   console.log(`→ Nova conexão: ${socket.id}`);
 
-  socket.on("joinRoom", (room) => {
-    console.log(`Tentativa de entrar na sala ${room}`);
-    
+  // Evento para criar sala
+  socket.on("createRoom", (roomName) => {
+    const roomId = uuidv4();
+    rooms.set(roomId, {
+      name: roomName,
+      users: new Set([socket.id]),
+      messages: [],
+      createdAt: Date.now()
+    });
+    io.emit('updateRooms', getAvailableRooms());
+    logRooms();
+  });
+
+  // Evento para entrar na sala
+  socket.on("joinRoom", (roomId) => {
+    const room = rooms.get(roomId);
+    if (!room || room.users.size >= 2) return;
+
+    // Sair de outras salas
     Array.from(socket.rooms).forEach(r => {
-      if (r !== socket.id && rooms[r]) {
-        rooms[r].users.delete(socket.id);
+      if (r !== socket.id && rooms.has(r)) {
+        const oldRoom = rooms.get(r);
+        oldRoom.users.delete(socket.id);
+        if (oldRoom.users.size === 0) rooms.delete(r);
         socket.leave(r);
       }
     });
 
-    socket.join(room);
-    rooms[room].users.add(socket.id);
-    
-    io.emit("updateRooms", {
-      sala1: rooms.sala1.users.size,
-      sala2: rooms.sala2.users.size,
-      sala3: rooms.sala3.users.size,
-      allEmpty: [...Object.values(rooms)].every(room => room.users.size === 0)
-    });
-    
-    socket.emit("chatHistory", rooms[room].messages);
-    console.log(`→ ${socket.id.slice(0,8)} entrou na ${room}`);
+    socket.join(roomId);
+    room.users.add(socket.id);
+    io.emit('updateRooms', getAvailableRooms());
+    socket.emit("chatHistory", room.messages);
     logRooms();
   });
 
+  // WebRTC Handlers
   socket.on("offer", (data) => {
     socket.to(data.room).emit("offer", data.offer);
     console.log(`↘ Offer de ${socket.id.slice(0,8)} para ${data.room}`);
@@ -144,24 +111,27 @@ io.on("connection", (socket) => {
     console.log(`↔ ICE Candidate de ${socket.id.slice(0,8)}`);
   });
 
+  // Chat Handler
   socket.on("chatMessage", (data) => {
+    const room = rooms.get(data.room);
+    if (!room) return;
+    
     const message = {
       text: data.text,
       sender: socket.id,
       timestamp: new Date().toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' })
     };
-    rooms[data.room].messages.push(message);
+    
+    room.messages.push(message);
     io.to(data.room).emit("chatMessage", message);
   });
 
+  // Disconnect Handler
   socket.on("disconnect", () => {
-    Object.keys(rooms).forEach(room => {
-      if (rooms[room].users.delete(socket.id)) {
-        io.emit("updateRooms", {
-          sala1: rooms.sala1.users.size,
-          sala2: rooms.sala2.users.size,
-          sala3: rooms.sala3.users.size
-        });
+    rooms.forEach((room, roomId) => {
+      if (room.users.delete(socket.id)) {
+        if (room.users.size === 0) rooms.delete(roomId);
+        io.emit('updateRooms', getAvailableRooms());
       }
     });
     console.log(`← ${socket.id.slice(0,8)} desconectado`);
