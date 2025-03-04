@@ -35,11 +35,62 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-const rooms = {
-  sala1: { users: new Set(), messages: [] },
-  sala2: { users: new Set(), messages: [] },
-  sala3: { users: new Set(), messages: [] }
-};
+const rooms = new Map();
+
+// Adicionar no io.on("connection"):
+socket.on("createRoom", (roomName) => {
+  const roomId = crypto.randomUUID();
+  rooms.set(roomId, {
+    name: roomName,
+    users: new Set(),
+    messages: [],
+    createdAt: Date.now()
+  });
+  io.emit('updateRooms', getAvailableRooms());
+});
+
+socket.on("joinRoom", (roomId) => {
+  const room = rooms.get(roomId);
+  if (!room || room.users.size >= 2) return;
+
+  // Sair de outras salas
+  Array.from(socket.rooms).forEach(r => {
+    if (r !== socket.id && rooms.has(r)) {
+      leaveRoom(r);
+    }
+  });
+
+  socket.join(roomId);
+  room.users.add(socket.id);
+  io.emit('updateRooms', getAvailableRooms());
+});
+
+socket.on("disconnect", () => {
+  Array.from(socket.rooms).forEach(roomId => {
+    if (rooms.has(roomId)) {
+      leaveRoom(roomId);
+    }
+  });
+});
+
+function leaveRoom(roomId) {
+  const room = rooms.get(roomId);
+  room.users.delete(socket.id);
+  if (room.users.size === 0) {
+    rooms.delete(roomId);
+  }
+  io.emit('updateRooms', getAvailableRooms());
+}
+
+function getAvailableRooms() {
+  return Array.from(rooms.entries())
+    .filter(([_, room]) => room.users.size < 2)
+    .map(([id, room]) => ({
+      id,
+      name: room.name,
+      users: room.users.size
+    }));
+}
 
 function logRooms() {
   console.log("\n═ Salas Atuais ════════════════════════");

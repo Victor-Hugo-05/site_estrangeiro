@@ -41,59 +41,71 @@
     .room-button[hidden] {
       display: none !important;
     }
+    .room-item {
+    background: #333;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .join-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .join-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+  }
   </style>
 </head>
 <body>
-  <h1>Escolha uma Sala</h1>
-  <div id="roomsContainer">
-    <button class="room-button" data-room="sala1">Sala 1 (0)</button>
-    <button class="room-button" data-room="sala2">Sala 2 (0)</button>
-    <button class="room-button" data-room="sala3">Sala 3 (0)</button>
-  </div>
+  <h1>Salas de Conversação</h1>
+  <button id="createRoomBtn">Criar Nova Sala</button>
+  <div id="roomsContainer" style="margin-top: 20px;"></div>
 
   <script>
-    const socket = io("https://seu-app.onrender.com", {
-      secure: true,
-      rejectUnauthorized: false,
-      transports: ["websocket"],
-      upgrade: false
-    });
-
     const roomsContainer = document.getElementById('roomsContainer');
-    
-    socket.on('updateRooms', (data) => {
-      const rooms = [
-        { name: 'sala1', count: data.sala1 },
-        { name: 'sala2', count: data.sala2 },
-        { name: 'sala3', count: data.sala3 }
-      ];
+    const createRoomBtn = document.getElementById('createRoomBtn');
 
-      // Verificar se todas estão vazias
-      const allEmpty = data.allEmpty;
-
-      // Atualizar cada sala
-      rooms.forEach(room => {
-        const button = roomsContainer.querySelector(`[data-room="${room.name}"]`);
-        if (button) {
-          // Atualizar contagem
-          button.innerHTML = `${room.name.toUpperCase()} (${room.count})`;
-          
-          // Mostrar/ocultar conforme regras
-          if (allEmpty || room.count > 0) {
-            button.style.display = 'block';
-          } else {
-            button.style.display = 'none';
-          }
-        }
-      });
+    createRoomBtn.addEventListener('click', () => {
+      const roomName = prompt('Nome da nova sala:');
+      if (roomName) {
+        socket.emit('createRoom', roomName);
+      }
     });
 
-    // Evento de clique modificado para usar data-attribute
-    roomsContainer.addEventListener('click', (e) => {
-      if (e.target.classList.contains('room-button')) {
-        const room = e.target.dataset.room;
-        window.location.href = `camera.html?room=${room}`;
+    socket.on('updateRooms', (rooms) => {
+      roomsContainer.innerHTML = '';
+      if (rooms.length === 0) {
+        roomsContainer.innerHTML = '<p>Nenhuma sala disponível</p>';
+        return;
       }
+
+      rooms.forEach(room => {
+        const div = document.createElement('div');
+        div.className = 'room-item';
+        div.innerHTML = `
+          <h3>${room.name}</h3>
+          <p>Participantes: ${room.users}/2</p>
+          <button class="join-btn" data-room="${room.id}">Entrar</button>
+        `;
+        roomsContainer.appendChild(div);
+      });
+
+      document.querySelectorAll('.join-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const roomId = e.target.dataset.room;
+          window.location.href = `camera.html?room=${roomId}`;
+        });
+      });
     });
   </script>
 </body>
